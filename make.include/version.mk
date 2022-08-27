@@ -4,6 +4,18 @@
 # - tag and commit version changes
 # - Use 'lightweight tags'
 
+define BUMPVERSION_CFG
+[bumpversion]
+current_version = $(version)
+commit = True
+tag = True
+[bumpversion:file:$(project)/version.py]
+search = __version__ = "{current_version}"
+replace = __version__ = "{new_version}"
+endef
+
+export BUMPVERSION_CFG
+
 bumpversion = bumpversion --allow-dirty $(1)
 
 ### bump patch version
@@ -25,28 +37,13 @@ bump-major: version-update
 	git push
 
 # assert gitclean, rewrite requirements.txt, update timestamp, apply version update
-version-update: .bumpversion.cfg
+version-update:
 	$(call gitclean)
+	[ -f .bumpversion.cfg ] || { echo "$$BUMPVERSION_CFG" >$@; git add .bumpversion.cfg; }
 	$(MAKE) requirements.txt
 	sed -E -i $(project)/version.py -e "s/(.*__timestamp__.*=).*/\1 \"$$(date --rfc-3339=seconds)\"/"
 	git add $(project)/version.py
 	@echo "Updated version.py timestamp and requirements.txt"
-
-define BUMPVERSION_CFG
-[bumpversion]
-current_version = $(version)
-commit = True
-tag = True
-[bumpversion:file:$(project)/version.py]
-search = __version__ = "{current_version}"
-replace = __version__ = "{new_version}"
-endef
-
-export BUMPVERSION_CFG
-
-.bumpversion.cfg: 
-	echo "$$BUMPVERSION_CFG" >$@
-	git add .bumpversion.cfg
 
 # clean up version tempfiles
 version-clean:
