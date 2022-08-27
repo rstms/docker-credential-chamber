@@ -23,12 +23,15 @@ latest_release_version = $(RELEASE) -J latest
 latest-github-release:
 	@$(call latest_release_version)
 
+testo:
+	echo $(call current_wheel)
+
 .dist: $(project)/version.py
 	mkdir -p dist
 	$(call gitclean)
 	@echo Building $(project)
 	flit build
-	[ -s $(current_wheel) ] && touch $@ 
+	[ -s $(call current_wheel) ] && touch $@ 
 
 .PHONY: dist 
 ### build a wheel file for distribution
