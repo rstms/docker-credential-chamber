@@ -2,12 +2,15 @@
 # docker makefile
 #
  
+$(if $(DOCKER_REGISTRY),,$(error DOCKER_REGISTRY is undefined))
+registry=$(DOCKER_REGISTRY)
+
 exec = chamber exec $(PROFILE) --
 
 build_args := \
  VERSION=$(version)
 
-image = $(registry)/$(repo)
+image = $(registry)/$(PWD)
 
 build_arg_list = $(foreach arg,$(build_args),--build-arg $(arg) )
 
@@ -31,7 +34,7 @@ build: release
 rebuild:
 	$(MAKE) build_opts="$(build_opts) --no-cache" build
 
-### push image to repository
+### push image to docker registry
 push: build
 	docker push $(image):$(version)
 	docker push $(image):latest

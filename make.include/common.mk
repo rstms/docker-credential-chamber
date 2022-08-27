@@ -1,37 +1,34 @@
 # common - initialization, variables, functions
 
-project != toml2json <pyproject.toml | jq -r .project.name
-repo != basename $$(pwd)
-organization = rstms
-registry = $(GITHUB_REGISTRY)
-branch != git branch | awk '/\*/{print $$2}'
-version = $(shell awk <$(project)/version.py -F\" '/^__version__/{print $$2}')
+project != dirname $$(ls */__init__.py)
+version != grep __version__ */version.py | grep -o '[0-9.]*'
 python_src != find . -name \*.py
 other_src := $(call makefiles) pyproject.toml
 src := $(python_src) $(other_src)
 
+
 ### list make targets with descriptions
 help:	
 	@set -e;\
-	/bin/echo -e '\nmake targets:\n';\
+	echo;\
+	echo 'Target        | Description';\
+	echo '------------- | --------------------------------------------------------------';\
 	for FILE in $(call makefiles); do\
 	  awk <$$FILE  -F':' '\
+	    BEGIN {help="begin"}\
 	    /^###.*/ { help=$$0; }\
-	    /^[a-z-]*:/ { if (last==help){ printf("%-16s %s\n", $$1, substr(help,4));} }\
+	    /^[a-z-]*:/ { if (last==help){ printf("%-14s| %s\n", $$1, substr(help,4));} }\
 	    /.*/{ last=$$0 }\
 	  ';\
-	done
-	
-help-table:
-	$(MAKE) help | awk -F'#' \
-	  'BEGIN{ first=1; print ".TS"; print "tab(#),box,nowarn;" } \
-	  /^#/{ if(first){ first=0; } else { print ".T&"; print "_ _"; } \
-	  print "cw(1i) s"; print "_ _"; print "c | l ."; print $$2; next; } \
-	  {print} END{print ".TE";}' |\
-	tbl | groff  -T utf8 | awk 'NF';
+	done;\
+	echo
+
+short-help:
+	@echo Targets:
+	@echo $$($(MAKE) --no-print-directory help | tail +4 | awk -F'|' '{print $$1}') |fold -s
 
 
-# generate a random hex string 
+### generate a random hex string 
 genkey:
 	@python -c 'import secrets; print(secrets.token_hex())'
 

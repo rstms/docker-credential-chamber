@@ -1,5 +1,6 @@
 # top-level Makefile 
 
+targets: short-help
 
 ### local install in editable mode for development
 dev: uninstall 
