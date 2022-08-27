@@ -7,7 +7,7 @@ options := $(if $(test),$(options) -k $(test),$(options))
 
 # run pytest;  example: make options=-svvvx test=cli test 
 test:
-	$(chamber) exec ethdev/test -- env TESTING=1 pytest $(options) $(testfiles)
+	env TESTING=1 pytest $(options) $(testfiles)
 
 # run pytest, dropping into pdb on exceptions or breakpoints
 debug:
@@ -28,12 +28,11 @@ testls:
 .PHONY: tox
 tox: .tox 
 .tox: $(src) tox.ini
-	chamber exec ethdev/test -- env PYTEST='$(if $(TOX_DEBUG),pytest -vvvs -o log_cli_level=INFO --pdb,pytest)' tox
+	env PYTEST='$(if $(TOX_DEBUG),pytest -vvvs -o log_cli_level=INFO --pdb,pytest)' tox
 	@touch $@
 
 debugtox:
 	$(MAKE) TOX_DEBUG=1 tox
 
 test-clean:
-	rm -f tests/data/server_root/templates/*.sol
 	rm -rf .tox
