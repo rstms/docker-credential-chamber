@@ -4,14 +4,7 @@
 # - tag and commit version changes
 # - Use 'lightweight tags'
 
-bumpversion = bumpversion\
- --current_version $(version)\
- --allow-dirty\
- --commit True\
- --tag True\
- --search '__version__ = "{current_version}"'\
- --replace '__version__ = "{new_version}"'\
- $(1) $(project)/version.py
+bumpversion = bumpversion --allow-dirty $(1)
 
 ### bump patch version
 bump-patch: version-update
@@ -39,7 +32,19 @@ version-update:
 	git add $(project)/version.py
 	@echo "Updated version.py timestamp and requirements.txt"
 
+.bumpversion.cfg: 
+	echo $(BUMPVERSION_CFG) >$@
+
 # clean up version tempfiles
 version-clean:
 	@:
 
+define BUMPVERSION_CFG
+[bumpversion]
+current_version = $(version)
+commit = True
+tag = True
+[bumpversion:file:$(project)/version.py]
+search = __version__ = "{current_version}"
+replace = __version__ = "{new_version}"
+endef
