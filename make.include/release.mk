@@ -27,11 +27,11 @@ testo:
 	echo $(call current_wheel)
 
 .dist: $(project)/version.py
-	mkdir -p dist
 	$(call gitclean)
 	@echo Building $(project)
+	mkdir -p dist
 	flit build
-	[ -s $(call current_wheel) ] && touch $@ 
+	[ -n "$(current_wheel)" -a -s "$(current_wheel)" ] && touch $@ 
 
 .PHONY: dist 
 ### build a wheel file for distribution
