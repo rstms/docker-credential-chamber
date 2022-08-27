@@ -19,7 +19,7 @@ latest_release_version != $(RELEASE) -J latest
 	$(call gitclean)
 	@echo Building $(project)
 	flit build
-	[ -s $(current_wheel) ] && touch $@
+	[ -s $(current_wheel) ] && touch $@ 
 
 .PHONY: dist 
 ### build a wheel file for distribution
