@@ -46,6 +46,7 @@ export BUMPVERSION_CFG
 
 .bumpversion.cfg: 
 	echo "$$BUMPVERSION_CFG" >$@
+	git add .bumpversion.cfg
 
 # clean up version tempfiles
 version-clean:
