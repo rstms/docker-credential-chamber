@@ -28,6 +28,7 @@ testls:
 ### test with tox if sources have changed
 tox: .tox 
 .tox: $(src) tox.ini
+	$(call gitclean)
 	env PYTEST='$(if $(TOX_DEBUG),pytest -vvvs -o log_cli_level=INFO --pdb,pytest)' tox
 	@touch $@
 

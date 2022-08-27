@@ -21,6 +21,7 @@ dev = [
     "isort",
     "flake8",
     "pytest",
+    "python-box",
     "tox"
 ]
 
