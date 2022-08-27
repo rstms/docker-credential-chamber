@@ -1,7 +1,7 @@
 # create distributable files if sources have changed
 
-current_wheel=dist/$(project)-$(version)-*.whl
-current_release=dist/$(project)-$(version)-release.json
+current_wheel != ls dist/$(project)-$(version)-*.whl
+current_release = dist/$(project)-$(version)-release.json
 
 $(if $(GITHUB_ORG),,$(error GITHUB_ORG is undefined))
 $(if $(GITHUB_TOKEN),,$(error GITHUB_TOKEN is undefined))
@@ -17,6 +17,9 @@ RELEASE = release\
 check_wheel = $(if $(shell [ -s $(current_wheel) ] && echo y),,$(error wheel file null or nonexistent))
 
 latest_release_version = $(RELEASE) -J latest
+
+testo:
+	echo $(current_wheel)
 
 
 .dist: $(project)/version.py

@@ -4,9 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "docker_credential_chamber"
+requires-python = ">=3.10"
 authors = [{name = "Matt Krueger", email = "mkrueger@rstms.net"}]
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
+keywords = ['docker', 'credential', 'helper', 'chamber']
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python"
+]
 dynamic = ["version", "description"]
 
 dependencies = [
