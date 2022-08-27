@@ -18,6 +18,8 @@ export BUMPVERSION_CFG
 
 bumpversion = bumpversion --allow-dirty $(1)
 
+bump: bump-patch
+
 ### bump patch version
 bump-patch: version-update
 	$(call bumpversion,patch)
