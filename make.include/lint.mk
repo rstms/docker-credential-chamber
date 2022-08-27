@@ -7,7 +7,7 @@ _fmt:
 	black $(lint_src)
 
 _lint:
-	flake8 --config tox.ini $(lint_src)
+	flake8 --config tox.ini $(lint_src) | tee lint
 
 ### reformat python source with black; check style, lint with flake8
 fmt: _fmt _lint

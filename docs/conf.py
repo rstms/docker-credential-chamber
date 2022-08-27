@@ -22,7 +22,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import docker_credential_chamber # noqa (pyflakes doesn't like the above path munging)
+import docker_credential_chamber  # noqa (pyflakes doesn't like the above path munging)
 
 # -- General configuration ---------------------------------------------
 
@@ -69,7 +69,7 @@ release = docker_credential_chamber.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-#language = None
+# language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import sys
 from base64 import b64decode, b64encode
 from pathlib import Path
@@ -142,7 +143,7 @@ class Secrets:
 def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
     """
     docker credential helper using chamber backend
-    reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
+    reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers  # noqa: E501
     """
 
     log_format = "%(levelname)s %(msg)s"
@@ -159,7 +160,7 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
     else:
         logger = None
 
-    handler = ExceptionHandler(debug, logger)
+    handler = ExceptionHandler(debug, logger)  # noqa: F841
 
     logging.info("startup")
     ctx.obj = Secrets(service, token)

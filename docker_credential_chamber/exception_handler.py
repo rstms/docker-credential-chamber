@@ -1,5 +1,5 @@
 """
-  ehandler 
+  ehandler
 
   well-behaved exception handler for python cli commands
 

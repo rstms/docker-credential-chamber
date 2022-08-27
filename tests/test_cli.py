@@ -2,6 +2,7 @@
 
 import re
 from logging import info
+
 from click.testing import CliRunner
 
 import docker_credential_chamber
@@ -14,16 +15,16 @@ def test_cli_version():
     version = docker_credential_chamber.__version__
     assert version
     assert isinstance(version, str)
-    parts = version.split('.')
+    parts = version.split(".")
     assert len(parts) == 3
     for part in parts:
         assert part.isnumeric()
-    info(f'version is {version}')
+    info(f"version is {version}")
 
 
 def test_cli_help():
     """Test CLI help."""
-    info('testing cli help')
+    info("testing cli help")
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0, result.output
