@@ -3,6 +3,8 @@
 # generate Sphinx HTML documentation, including API docs
 #
 
+cli != sed -n <pyproject.toml '1,/^\[project.scripts\]/d;s/^\(.*\) = .*$$/\1/p;q'
+
 ### install documentation build dependencies
 install-docs:
 	pip install -U .[docs]
@@ -28,9 +30,13 @@ docs/readme.rst: README.md
 	mv README.rst $@
 
 # add the cli help to the README
-README.md: docker_credential_chamber/cli.py
-	awk <$@ >README.new -v flag=0 '/^## CLI/{flag=1} /```/{if(flag) exit} {print $$0}'
-	echo '```' >>README.new
-	ethdev --help >>README.new
-	echo '```' >>README.new
-	mv README.new $@
+
+.PHONY: README.md
+README.md:
+	if [ $(project)/cli.py -nt $@ ]; then\
+	  awk <$@ >README.new -v flag=0 '/^## CLI/{flag=1} /```/{if(flag) exit} {print $$0}';\
+	  echo '```' >>README.new;\
+	  $(cli) --help >>README.new;\
+	  echo '```' >>README.new;\
+	  mv README.new $@;\
+	fi

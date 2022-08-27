@@ -31,14 +31,15 @@ testo:
 
 .dist: $(project)/version.py
 	$(call gitclean)
-	@echo Building $(project)
 	mkdir -p dist
 	flit build
-	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && touch $@ 
 
 .PHONY: dist 
 ### build a wheel file for distribution
-dist: $(if $(DISABLE_TOX),,tox) .dist
+dist: $(if $(DISABLE_TOX),,tox)
+	@echo Building $(current_wheel)...
+	@[ -s "$(call current_wheel)" ] && echo "He's already got one." || $(MAKE) .dist 
+
 
 $(current_release): dist
 	$(call check_wheel)

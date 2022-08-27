@@ -142,8 +142,15 @@ class Secrets:
 @click.pass_context
 def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
     """
-    docker credential helper using chamber backend
-    reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers  # noqa: E501
+    docker credential helper
+
+    This program implements the credential helper protocol defined by docker
+    for use by the 'docker login' command.  It uses 'chamber' to store the
+    secrets so they are never written to ~/docker/config.json.
+    (and preventing docker's warning)
+
+    \b
+    reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
     """
 
     log_format = "%(levelname)s %(msg)s"
