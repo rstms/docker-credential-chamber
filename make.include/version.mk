@@ -11,7 +11,7 @@ bumpversion = bumpversion\
  --tag True\
  --search '__version__ = "{current_version}"'\
  --replace '__version__ = "{new_version}"'\
- $(1)
+ $(1) $(project)/version.py
 
 ### bump patch version
 bump-patch: version-update
