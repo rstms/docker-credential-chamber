@@ -4,6 +4,9 @@ options ?= -x --log-cli-level=CRITICAL
 testfiles ?= $(wildcard tests/test_*.py)
 options := $(if $(test),$(options) -k $(test),$(options))
 
+tox_options ?=
+
+
 
 ### run tests;  example: make options=-svvx test=cli test 
 test:
@@ -11,7 +14,7 @@ test:
 
 ### run tests; drop into pdb on exceptions or breakpoints
 debug:
-	${MAKE} options="$(options) --log-cli-level=INFO -xvvvs --pdb" test
+	${MAKE} options="--log-cli-level=INFO -xvvvs --pdb" test
 
 ### check code coverage quickly with the default Python
 coverage:
@@ -24,17 +27,20 @@ coverage:
 testls:
 	@grep -h -R '^def test_' tests/test_*.py | awk -F'[ (]' '{print $$2}' | sort | uniq
 
+
 .PHONY: tox
 ### test with tox if sources have changed
 tox: .tox 
 .tox: $(src) tox.ini
 	$(call gitclean)
-	env PYTEST='$(if $(TOX_DEBUG),pytest -vvvs -o log_cli_level=INFO --pdb,pytest)' tox
+	env PYTEST_OPTIONS='$(tox_options)' tox
 	@touch $@
 
 # run tox in debug mode
-debugtox:
-	$(MAKE) TOX_DEBUG=1 tox
+toxdebug:
+	$(MAKE) tox_options="-o log_cli_level=INFO -xvvvs --pdb" tox
 
-test-clean:
+toxclean:
 	rm -rf .tox
+
+test-clean: toxclean

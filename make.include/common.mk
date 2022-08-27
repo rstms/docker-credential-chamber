@@ -39,7 +39,7 @@ genkey:
 
 # break with an error if there are uncommited changes
 define gitclean =
-	$(if $(and $(if $(DIRTY),,1),$(shell git status --porcelain)),$(error git status: dirty, commit and push first))
+	$(if $(and $(if $(ALLOW_DIRTY),,1),$(shell git status --porcelain)),$(error git status: dirty, commit and push first))
 endef
 
 

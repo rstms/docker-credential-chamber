@@ -24,7 +24,10 @@ latest-github-release:
 	@$(call latest_release_version)
 
 testo:
-	echo $(call current_wheel)
+	rm -rf dist
+	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && echo yup || echo nope
+	flit build
+	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && echo yup || echo nope
 
 .dist: $(project)/version.py
 	$(call gitclean)
