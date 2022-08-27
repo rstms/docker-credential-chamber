@@ -33,7 +33,6 @@ version-update: .bumpversion.cfg
 	@echo "Updated version.py timestamp and requirements.txt"
 
 define BUMPVERSION_CFG
-
 [bumpversion]
 current_version = $(version)
 commit = True
@@ -41,7 +40,6 @@ tag = True
 [bumpversion:file:$(project)/version.py]
 search = __version__ = "{current_version}"
 replace = __version__ = "{new_version}"
-
 endef
 
 export BUMPVERSION_CFG
