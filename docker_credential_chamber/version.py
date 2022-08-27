@@ -1,2 +1,2 @@
-__version__ = "0.1.0"
-__timestamp__ = "foo"
+__version__ = "0.1.1"
+__timestamp__ = "2022-08-27 13:20:44-05:00"
