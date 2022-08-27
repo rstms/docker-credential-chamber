@@ -1,0 +1,8 @@
+black
+coverage
+bump2version
+isort
+flake8
+pytest
+python-box
+tox

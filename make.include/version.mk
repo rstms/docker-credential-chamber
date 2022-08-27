@@ -4,7 +4,14 @@
 # - tag and commit version changes
 # - Use 'lightweight tags'
 
-bumpversion = bumpversion --allow-dirty $(1)
+bumpversion = bumpversion\
+ --current_version $(version)\
+ --allow-dirty\
+ --commit True\
+ --tag True\
+ --search '__version__ = "{current_version}"'\
+ --replace '__version__ = "{new_version}"'\
+ $(1)
 
 ### bump patch version
 bump-patch: version-update
