@@ -25,7 +25,7 @@ bump-major: version-update
 	git push
 
 # assert gitclean, rewrite requirements.txt, update timestamp, apply version update
-version-update:
+version-update: .bumpversion.cfg
 	$(call gitclean)
 	$(MAKE) requirements.txt
 	sed -E -i $(project)/version.py -e "s/(.*__timestamp__.*=).*/\1 \"$$(date --rfc-3339=seconds)\"/"
