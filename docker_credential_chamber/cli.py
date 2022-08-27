@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import click
-import sys
 import json
+import logging
+import sys
+from base64 import b64decode, b64encode
 from pathlib import Path
 from subprocess import check_call, check_output
 from tempfile import SpooledTemporaryFile
-from base64 import b64encode, b64decode
 
-import logging
+import click
 
 from .exception_handler import ExceptionHandler
 

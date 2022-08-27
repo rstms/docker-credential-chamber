@@ -3,11 +3,11 @@
 # generate Sphinx HTML documentation, including API docs
 #
 
-## install documentation build dependencies
+### install documentation build dependencies
 install-docs:
 	pip install -U .[docs]
 
-## rebuild documentation
+### rebuild documentation
 docs: install-docs clean-docs docs/readme.rst
 	sphinx-apidoc -o docs/ $(project)
 	$(MAKE) -C docs html
@@ -28,10 +28,9 @@ docs/readme.rst: README.md
 	mv README.rst $@
 
 # add the cli help to the README
-README.md: seven_ethdev/cli.py
+README.md: docker_credential_chamber/cli.py
 	awk <$@ >README.new -v flag=0 '/^## CLI/{flag=1} /```/{if(flag) exit} {print $$0}'
 	echo '```' >>README.new
 	ethdev --help >>README.new
 	echo '```' >>README.new
 	mv README.new $@
-

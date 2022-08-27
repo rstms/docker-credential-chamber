@@ -10,14 +10,17 @@ python_src != find . -name \*.py
 other_src := $(call makefiles) pyproject.toml
 src := $(python_src) $(other_src)
 
-## list make targets with descriptions
+### list make targets with descriptions
 help:	
 	@set -e;\
-	(for file in $(call makefiles); do\
-	  echo "$$(head -1 $$file)";\
-	  sed <$$file -n -E \
-	  '/^##.*/{h;d}; s/^([[:alnum:]_-]+:).*/\1/; /^[[:alnum:]_-]+:/{G;s/:\n/\t/p}'; \
-	done)
+	/bin/echo -e '\nmake targets:\n';\
+	for FILE in $(call makefiles); do\
+	  awk <$$FILE  -F':' '\
+	    /^###.*/ { help=$$0; }\
+	    /^[a-z-]*:/ { if (last==help){ printf("%-16s %s\n", $$1, substr(help,4));} }\
+	    /.*/{ last=$$0 }\
+	  ';\
+	done
 	
 help-table:
 	$(MAKE) help | awk -F'#' \
@@ -28,7 +31,7 @@ help-table:
 	tbl | groff  -T utf8 | awk 'NF';
 
 
-## generate a random hex string 
+# generate a random hex string 
 genkey:
 	@python -c 'import secrets; print(secrets.token_hex())'
 

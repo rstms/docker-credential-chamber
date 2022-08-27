@@ -15,8 +15,21 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest"
+    "black",
+    "coverage",
+    "bump2version",
+    "isort",
+    "flake8",
+    "pytest",
+    "tox"
 ]
+
+docs = [
+    "m2r2",
+    "sphinx",
+    "sphinx-click",
+    "sphinx-rtd-theme"
+  ]
 
 [tool.black]
 line-length = 80

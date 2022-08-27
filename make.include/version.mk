@@ -6,19 +6,19 @@
 
 bumpversion = bumpversion --allow-dirty $(1)
 
-## bump patch level
+### bump patch version
 bump-patch: version-update
 	$(call bumpversion,patch)
 	git add requirements*.txt
 	git push
 
-## bump minor version, reset patch to zero
+### bump minor version, reset patch to zero
 bump-minor: version-update
 	$(call bumpversion,minor)
 	git add requirements*.txt
 	git push
 	
-## bump version, reset minor and patch to zero
+### bump major version, reset minor and patch to zero
 bump-major: version-update
 	$(call bumpversion,major)
 	git add requirements*.txt

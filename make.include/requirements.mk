@@ -25,7 +25,7 @@ export MAKE_REQUIREMENTS_PYSCRIPT
 
 make_requirements := python -c "$$MAKE_REQUIREMENTS_PYSCRIPT"
 
-## update requirements*.txt 
+### update requirements*.txt 
 requirements.txt: pyproject.toml
 	rm -f requirements*.txt
 	$(call make_requirements) <$<

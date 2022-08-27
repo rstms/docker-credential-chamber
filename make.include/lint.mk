@@ -1,4 +1,4 @@
-# lint / source format
+# source formatting
 
 lint_src = $(project) tests docs
 
@@ -9,7 +9,7 @@ _fmt:
 _lint:
 	flake8 --config tox.ini $(lint_src)
 
-## reformat python source with black; check style, lint with flake8
+### reformat python source with black; check style, lint with flake8
 fmt: _fmt _lint
 
 # alias for fmt
