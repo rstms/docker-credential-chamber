@@ -15,7 +15,7 @@ check_wheel = $(if $(shell [ -s $(current_wheel) ] && echo y),,$(error wheel fil
 latest_release_version != $(RELEASE) -J latest
 
 .dist: $(project)/version.py
-	mkdir -f dist
+	mkdir -p dist
 	$(call gitclean)
 	@echo Building $(project)
 	flit build
