@@ -1,14 +1,15 @@
 # create distributable files if sources have changed
 
-current_wheel != ls dist/$(project)-$(version)-*.whl
+current_wheel != ls 2>/dev/null dist/$(project)-$(version)-*.whl
 current_release = dist/$(project)-$(version)-release.json
+repository != basename $(PWD)
 
 $(if $(GITHUB_ORG),,$(error GITHUB_ORG is undefined))
 $(if $(GITHUB_TOKEN),,$(error GITHUB_TOKEN is undefined))
 
-RELEASE = release\
+RELEASE = release -d\
   --organization $(GITHUB_ORG)\
-  --repository $(PWD)\
+  --repository $(repository)\
   --token $(GITHUB_TOKEN)\
   --module-dir ./$(project)\
   --wheel-dir ./dist\
@@ -18,9 +19,9 @@ check_wheel = $(if $(shell [ -s $(current_wheel) ] && echo y),,$(error wheel fil
 
 latest_release_version = $(RELEASE) -J latest
 
-testo:
-	echo $(current_wheel)
-
+### query github and output the latest release version
+latest-github-release:
+	@$(call latest_release_version)
 
 .dist: $(project)/version.py
 	mkdir -p dist
@@ -35,8 +36,8 @@ dist: $(if $(DISABLE_TOX),,tox) .dist
 
 $(current_release): dist
 	$(call check_wheel)
-	@set -e;\
-	if [ $(call latest_release_version) = $(version) ]; then \
+	set -e;\
+	if [ "$(call latest_release_version)" = "$(version)" ]; then \
 	  echo "Version $(version) is already released"; \
 	else \
 	  echo "Creating $(project) release v$(version)..."; \
