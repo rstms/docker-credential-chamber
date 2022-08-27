@@ -1,6 +1,6 @@
 # create distributable files if sources have changed
 
-current_wheel != ls 2>/dev/null dist/$(project)-$(version)-*.whl
+current_wheel = $(shell ls 2>/dev/null dist/$(project)-$(version)-*.whl)
 current_release = dist/$(project)-$(version)-release.json
 repository != basename $(PWD)
 
@@ -31,7 +31,7 @@ testo:
 	@echo Building $(project)
 	mkdir -p dist
 	flit build
-	[ -n "$(current_wheel)" -a -s "$(current_wheel)" ] && touch $@ 
+	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && touch $@ 
 
 .PHONY: dist 
 ### build a wheel file for distribution
