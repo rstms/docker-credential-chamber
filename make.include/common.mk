@@ -24,8 +24,9 @@ help:
 	echo
 
 short-help:
-	@echo Targets:
-	@echo $$($(MAKE) --no-print-directory help | tail +4 | awk -F'|' '{print $$1}') |fold -s
+	@echo "\nUsage: make TARGET\n";\
+	echo $$($(MAKE) --no-print-directory help | tail +4 | awk -F'|' '{print $$1}'|sort)|fold -s -w 60;\
+	echo
 
 
 ### generate a random hex string 
