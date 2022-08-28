@@ -3,6 +3,7 @@ coverage
 bump2version
 isort
 flake8
+flake8-length
 pytest
 pytest-datadir
 python-box
