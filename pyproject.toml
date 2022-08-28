@@ -6,6 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "docker-credential-chamber"
 requires-python = ">=3.10"
 authors = [{name = "Matt Krueger", email = "mkrueger@rstms.net"}]
+readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
 keywords = ['docker', 'credential', 'helper', 'chamber']
 classifiers = [
