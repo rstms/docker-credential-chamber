@@ -3,7 +3,6 @@
 # generate Sphinx HTML documentation, including API docs
 #
 
-cli != sed -n <pyproject.toml '1,/^\[project.scripts\]/d;s/^\(.*\) = .*$$/\1/p;q'
 
 ### install documentation build dependencies
 install-docs:

@@ -2,14 +2,14 @@
 
 current_wheel != ls 2>/dev/null dist/$(project)-$(version)-*.whl
 current_release = dist/$(project)-$(version)-release.json
-repository != basename $(PWD)
 
 $(if $(GITHUB_ORG),,$(error GITHUB_ORG is undefined))
 $(if $(GITHUB_TOKEN),,$(error GITHUB_TOKEN is undefined))
 
+
 RELEASE = release -d\
   --organization $(GITHUB_ORG)\
-  --repository $(repository)\
+  --repository $(dist_name)\
   --token $(GITHUB_TOKEN)\
   --module-dir ./$(project)\
   --wheel-dir ./dist\

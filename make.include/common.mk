@@ -1,11 +1,25 @@
 # common - initialization, variables, functions
 
 project != dirname $$(ls */__init__.py)
+dist_name != sed <pyproject.toml -n '1,/\[project\]/d;/dist-name/s/.*"\(.*\)".*/\1/p'
+cli != sed -n <pyproject.toml '1,/^\[project.scripts\]/d;s/^\(.*\) = .*$$/\1/p;q'
 version != grep __version__ */version.py | grep -o '[0-9.]*'
 python_src != find . -name \*.py
 other_src := $(call makefiles) pyproject.toml
 src := $(python_src) $(other_src)
 
+# sanity checks
+$(if $(dist_name),,$(error failed to read dist_name from pyproject.toml))
+$(if $(project),,$(error failed to read project name from pyproject.toml))
+$(if $(version),,$(error failed to read version from version.py))
+$(if $(shell [ -d "./$(project)" ] || echo missing),$(error cannot find project dir "$(project)"))
+$(if $(shell ls $(project)/__init__.py),,$(error file "__init__.py" missing from project dir "$(project)"))
+
+names:
+	@echo project=$(project)
+	@echo dist_name=$(dist_name)
+	@echo cli=$(cli)
+	@echo version=$(version)
 
 ### list make targets with descriptions
 help:	
