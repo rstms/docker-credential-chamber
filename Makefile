@@ -13,7 +13,7 @@ install:
 ### remove module from the local python environment
 uninstall: 
 	pip install -U pip setuptools wheel flit
-	pip uninstall -yqq $(project)
+	pip uninstall -yqq $(module)
 
 ### remove all build, test, coverage and Python artifacts
 clean: 

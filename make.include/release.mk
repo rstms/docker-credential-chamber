@@ -1,17 +1,16 @@
 # create distributable files if sources have changed
 
-current_wheel != ls 2>/dev/null dist/$(project)-$(version)-*.whl
-current_release = dist/$(project)-$(version)-release.json
+current_wheel != ls 2>/dev/null dist/$(module)-$(version)-*.whl
+current_release = dist/$(module)-$(version)-release.json
 
 $(if $(GITHUB_ORG),,$(error GITHUB_ORG is undefined))
 $(if $(GITHUB_TOKEN),,$(error GITHUB_TOKEN is undefined))
 
-
 RELEASE = release -d\
   --organization $(GITHUB_ORG)\
-  --repository $(dist_name)\
+  --repository $(project)\
   --token $(GITHUB_TOKEN)\
-  --module-dir ./$(project)\
+  --module-dir ./$(module)\
   --wheel-dir ./dist\
   --version $(version) 
 
@@ -23,7 +22,7 @@ latest_release_version != $(RELEASE) -J latest
 latest-github-release:
 	@echo $(latest_release_version)
 
-.dist: $(project)/version.py
+.dist: $(module)/version.py
 	$(call gitclean)
 	mkdir -p dist
 	flit build

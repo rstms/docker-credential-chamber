@@ -1,23 +1,32 @@
 # common - initialization, variables, functions
 
-project != dirname $$(ls */__init__.py)
-dist_name != sed <pyproject.toml -n '1,/\[project\]/d;/dist-name/s/.*"\(.*\)".*/\1/p'
-cli != sed -n <pyproject.toml '1,/^\[project.scripts\]/d;s/^\(.*\) = .*$$/\1/p;q'
-version != grep __version__ */version.py | grep -o '[0-9.]*'
+# extract values from pyproject.toml
+pyproject_toml_section = sed <pyproject.toml '1,/\[$(1)\]/d;/^\[/,$$d'
+pyproject_toml_value = sed -n '/^\s*$(1)\s*=/s/^.*"\(.*\)".*$$/\1/p;'
+pyproject_toml_lookup = $(call pyproject_toml_section,$(1))|$(call pyproject_toml_value,$(2))
+
+# set make variables from project files
+project != $(call pyproject_toml_lookup,project,name)
+module != $(call pyproject_toml_lookup,tool.flit.module,name)
+cli != $(call pyproject_toml_section,project.scripts) | sed -n 's/^\(.*\)\s=.*$$/\1/p;q'
+version != grep __version__ $(module)/version.py | grep -o '[0-9.]*'
 python_src != find . -name \*.py
 other_src := $(call makefiles) pyproject.toml
 src := $(python_src) $(other_src)
 
 # sanity checks
-$(if $(dist_name),,$(error failed to read dist_name from pyproject.toml))
 $(if $(project),,$(error failed to read project name from pyproject.toml))
+$(if $(shell [ -d ../"$(project)" ] || echo X),$(error project dir $(project) not found))
+$(if $(shell [ $$(readlink -e ../$(project)) = $$(readlink -e .) ] || echo X),$(error mismatch: $(project) != .))
+$(if $(module),,$(error failed to read module name from pyproject.toml))
+$(if $(shell [ -d "./$(module)" ] || echo missing),$(error module dir '$(module)' not found))
+$(if $(shell ls $(module)/__init__.py),,$(error expected "__init__.py" in module dir '$(module)'))
 $(if $(version),,$(error failed to read version from version.py))
-$(if $(shell [ -d "./$(project)" ] || echo missing),$(error cannot find project dir "$(project)"))
-$(if $(shell ls $(project)/__init__.py),,$(error file "__init__.py" missing from project dir "$(project)"))
+$(if $(cli),,$(error failed to read cli name from pyproject.toml))
 
 names:
 	@echo project=$(project)
-	@echo dist_name=$(dist_name)
+	@echo module=$(module)
 	@echo cli=$(cli)
 	@echo version=$(version)
 

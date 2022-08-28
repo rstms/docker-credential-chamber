@@ -1,6 +1,6 @@
 # source formatting
 
-lint_src = $(project) tests docs
+lint_src = $(module) tests docs
 
 _fmt:
 	isort $(lint_src)

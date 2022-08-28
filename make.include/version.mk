@@ -9,7 +9,7 @@ define BUMPVERSION_CFG
 current_version = $(version)
 commit = True
 tag = True
-[bumpversion:file:$(project)/version.py]
+[bumpversion:file:$(module)/version.py]
 search = __version__ = "{current_version}"
 replace = __version__ = "{new_version}"
 endef
@@ -43,8 +43,8 @@ version-update:
 	$(call gitclean)
 	[ -f .bumpversion.cfg ] || { echo "$$BUMPVERSION_CFG" >.bumpversion.cfg; git add .bumpversion.cfg; }
 	$(MAKE) requirements.txt
-	sed -E -i $(project)/version.py -e "s/(.*__timestamp__.*=).*/\1 \"$$(date --rfc-3339=seconds)\"/"
-	git add $(project)/version.py
+	sed -E -i $(module)/version.py -e "s/(.*__timestamp__.*=).*/\1 \"$$(date --rfc-3339=seconds)\"/"
+	git add $(module)/version.py
 	@echo "Updated version.py timestamp and requirements.txt"
 
 # clean up version tempfiles

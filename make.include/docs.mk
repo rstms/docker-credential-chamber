@@ -32,7 +32,7 @@ docs/readme.rst: README.md
 
 .PHONY: README.md
 README.md:
-	if [ $(project)/cli.py -nt $@ ]; then\
+	if [ $(module)/cli.py -nt $@ ]; then\
 	  awk <$@ >README.new -v flag=0 '/^## CLI/{flag=1} /```/{if(flag) exit} {print $$0}';\
 	  echo '```' >>README.new;\
 	  $(cli) --help >>README.new;\
