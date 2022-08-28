@@ -1,5 +1,7 @@
 # create distributable files if sources have changed
 
+dist != mkdir -p ./dist
+
 current_wheel != ls 2>/dev/null dist/$(module)-$(version)-*.whl
 current_release = dist/$(module)-$(version)-release.json
 
