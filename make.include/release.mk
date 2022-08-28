@@ -1,6 +1,6 @@
 # create distributable files if sources have changed
 
-current_wheel = $(shell ls 2>/dev/null dist/$(project)-$(version)-*.whl)
+current_wheel != ls 2>/dev/null dist/$(project)-$(version)-*.whl
 current_release = dist/$(project)-$(version)-release.json
 repository != basename $(PWD)
 
@@ -17,17 +17,11 @@ RELEASE = release -d\
 
 check_wheel = $(if $(shell [ -s $(current_wheel) ] && echo y),,$(error wheel file null or nonexistent))
 
-latest_release_version = $(RELEASE) -J latest
+latest_release_version != $(RELEASE) -J latest
 
 ### query github and output the latest release version
 latest-github-release:
-	@$(call latest_release_version)
-
-testo:
-	rm -rf dist
-	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && echo yup || echo nope
-	flit build
-	[ -n "$(call current_wheel)" -a -s "$(call current_wheel)" ] && echo yup || echo nope
+	@echo $(latest_release_version)
 
 .dist: $(project)/version.py
 	$(call gitclean)
@@ -37,14 +31,13 @@ testo:
 .PHONY: dist 
 ### build a wheel file for distribution
 dist: $(if $(DISABLE_TOX),,tox)
-	@echo Building $(current_wheel)...
-	@[ -s "$(call current_wheel)" ] && echo "He's already got one." || $(MAKE) .dist 
+	@[ -s "$(current_wheel)" ] && echo "$(current_wheel) is up to date." || $(MAKE) --no-print-directory .dist 
 
 
 $(current_release): dist
 	$(call check_wheel)
-	set -e;\
-	if [ "$(call latest_release_version)" = "$(version)" ]; then \
+	@set -e;\
+	if [ "$(latest_release_version)" = "$(version)" ]; then \
 	  echo "Version $(version) is already released"; \
 	else \
 	  echo "Creating $(project) release v$(version)..."; \

@@ -7,7 +7,7 @@ clean-clean: clean-build clean-pyc clean-test
 # remove build artifacts
 clean-build: 
 	rm -fr build/
-	rm -fr dist/
+	rm -f dist/*
 	rm -fr wheels/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +

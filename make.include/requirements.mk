@@ -31,6 +31,6 @@ requirements.txt: pyproject.toml
 	$(call make_requirements) <$<
 
 # clean up generated requirements files
-requirements-clean:
-	rm requirements*.txt
+#requirements-clean:
+#3	rm requirements*.txt
 

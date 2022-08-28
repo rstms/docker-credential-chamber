@@ -14,7 +14,7 @@ test:
 
 ### run tests; drop into pdb on exceptions or breakpoints
 debug:
-	${MAKE} options="--log-cli-level=INFO -xvvvs --pdb" test
+	@$(MAKE) --no-print-directory options="$(options) --log-cli-level=INFO -xvvvs --pdb" test
 
 ### check code coverage quickly with the default Python
 coverage:
@@ -38,7 +38,7 @@ tox: .tox
 
 # run tox in debug mode
 toxdebug:
-	$(MAKE) tox_options="-o log_cli_level=INFO -xvvvs --pdb" tox
+	$(MAKE) --no-print-directory tox_options="-o log_cli_level=INFO -xvvvs --pdb" tox
 
 toxclean:
 	rm -rf .tox

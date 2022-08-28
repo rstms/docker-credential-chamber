@@ -206,7 +206,8 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
 def store(ctx, input):
     """protocol command"""
     logging.debug(f"store  {input=}")
-    config = json.load(input)
+    data = input.read()
+    config = json.loads(data)
     ctx.obj.put(config["ServerURL"], config["Username"], config["Secret"])
 
 
