@@ -153,6 +153,8 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
     reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
     """
 
+    # reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
+
     log_format = "%(levelname)s %(msg)s"
     if log_file:
         logging.basicConfig(
