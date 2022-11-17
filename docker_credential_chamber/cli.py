@@ -93,7 +93,7 @@ class Secrets:
 
     def _read(self):
         data = check_output(
-            ["chamber", "export", self.service], env=self._env()
+            ["chamber", "--if-exists", "export", self.service], env=self._env()
         ).decode()
         if len(data):
             ret = json.loads(data)
