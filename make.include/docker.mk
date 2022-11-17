@@ -5,25 +5,23 @@
 $(if $(DOCKER_REGISTRY),,$(error DOCKER_REGISTRY is undefined))
 registry=$(DOCKER_REGISTRY)
 
-exec = chamber exec $(PROFILE) --
-
 build_args := \
  VERSION=$(version)
 
-image = $(registry)/$(PWD)
+image = $(registry)/$(project)
 
 build_arg_list = $(foreach arg,$(build_args),--build-arg $(arg) )
 
 build_opts := $(build_arg_list) --tag $(image):$(version)
 
 build_env:
+	@echo "image=$(image)"
 	@echo "registry=$(registry)"
 	@echo "base_version=$(version)"
 	@echo "version=$(version)"
 	@echo "build_args=$(build_args)"
 	@echo "build_arg_list=$(build_arg_list)"
 	@echo "build_opts=$(build_opts)"
-	@chamber env $(PROFILE)
 
 ### build image
 build: release
@@ -41,5 +39,5 @@ push: build
 
 ### run image
 run: 
-	$(exec) docker run $(image)
+	docker run $(image)
 
