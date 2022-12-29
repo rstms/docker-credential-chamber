@@ -93,13 +93,17 @@ class Secrets:
             self.secrets = self._read()
 
     def _read(self):
-        data = check_output(
-            [self.chamber, "--if-exists", "export", self.service], env=self._env()
+        ret = {}
+        services = check_output(
+            [self.chamber, "list-services"], env=self._env()
         ).decode()
-        if len(data):
-            ret = json.loads(data)
-        else:
-            ret = {}
+        services = services.split('\n')
+        if self.service in services:
+            data = check_output(
+                [self.chamber, "export", self.service], env=self._env()
+            ).decode()
+            if len(data):
+                ret = json.loads(data)
         return ret
 
 
