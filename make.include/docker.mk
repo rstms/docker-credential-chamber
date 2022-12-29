@@ -39,5 +39,5 @@ push: build
 
 ### run image
 run: 
-	docker run $(image)
+	docker run $(image):latest
 
