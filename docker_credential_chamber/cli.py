@@ -23,10 +23,11 @@ def decode_key(key):
 
 
 class Secrets:
-    def __init__(self, service, vault_token=None, vault_addr=None):
+    def __init__(self, service, vault_token=None, vault_addr=None, chamber=None):
         self.service = service
         self.vault_token = vault_token
         self.vault_addr = vault_addr
+        self.chamber = chamber or 'chamber'
         self.secrets = None
 
     def _env(self):
@@ -73,13 +74,13 @@ class Secrets:
         else:
             for key in self._read().keys():
                 check_call(
-                    ["chamber", "delete", self.service, key], env=self._env()
+                    [self.chamber, "delete", self.service, key], env=self._env()
                 )
             with SpooledTemporaryFile() as fp:
                 fp.write(json.dumps(self.secrets).encode())
                 fp.seek(0)
                 check_call(
-                    ["chamber", "import", self.service, "-"],
+                    [self.chamber, "import", self.service, "-"],
                     stdin=fp,
                     env=self._env(),
                 )
@@ -93,7 +94,7 @@ class Secrets:
 
     def _read(self):
         data = check_output(
-            ["chamber", "--if-exists", "export", self.service], env=self._env()
+            [self.chamber, "--if-exists", "export", self.service], env=self._env()
         ).decode()
         if len(data):
             ret = json.loads(data)
@@ -139,8 +140,9 @@ class Secrets:
     show_envvar=True,
     default="INFO",
 )
+@click.option('-c', '--chamber', envvar='CHAMBER', show_envvar=True, default='chamber')
 @click.pass_context
-def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
+def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
     """
     docker credential helper
 
@@ -172,7 +174,7 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level):
     handler = ExceptionHandler(debug, logger)  # noqa: F841
 
     logging.info("startup")
-    ctx.obj = Secrets(service, token)
+    ctx.obj = Secrets(service, vault_token=token, chamber=chamber)
 
 
 # @cli.command()
