@@ -133,3 +133,4 @@ dmypy.json
 .tox
 lint
 postactivate
+.pyproject.toml.*

@@ -34,7 +34,8 @@ dev = [
     "pytest-datadir",
     "python-box",
     "tox",
-    "pdbpp"
+    "pdbpp",
+    "toml"
 ]
 
 docs = [
