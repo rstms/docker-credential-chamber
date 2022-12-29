@@ -23,11 +23,13 @@ def decode_key(key):
 
 
 class Secrets:
-    def __init__(self, service, vault_token=None, vault_addr=None, chamber=None):
+    def __init__(
+        self, service, vault_token=None, vault_addr=None, chamber=None
+    ):
         self.service = service
         self.vault_token = vault_token
         self.vault_addr = vault_addr
-        self.chamber = chamber or 'chamber'
+        self.chamber = chamber or "chamber"
         self.secrets = None
 
     def _env(self):
@@ -97,7 +99,7 @@ class Secrets:
         services = check_output(
             [self.chamber, "list-services"], env=self._env()
         ).decode()
-        services = services.split('\n')
+        services = services.split("\n")
         if self.service in services:
             data = check_output(
                 [self.chamber, "export", self.service], env=self._env()
@@ -144,7 +146,9 @@ class Secrets:
     show_envvar=True,
     default="INFO",
 )
-@click.option('-c', '--chamber', envvar='CHAMBER', show_envvar=True, default='chamber')
+@click.option(
+    "-c", "--chamber", envvar="CHAMBER", show_envvar=True, default="chamber"
+)
 @click.pass_context
 def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
     """
