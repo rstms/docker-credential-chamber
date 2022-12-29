@@ -3,7 +3,6 @@
 import json
 import re
 from logging import info
-from traceback import print_exception
 
 import pytest
 from click.testing import CliRunner
@@ -15,16 +14,11 @@ from docker_credential_chamber import cli
 @pytest.fixture
 def run():
     runner = CliRunner()
-    env = {"DOCKER_CREDENTIALS_SERVICE": "credentials_helper_system_test"}
 
     def _run(cmd, **kwargs):
         expected_exit = kwargs.pop("expected_input", 0)
-        kwargs["env"] = env
+        kwargs["catch_exceptions"] = False
         result = runner.invoke(cli, cmd, **kwargs)
-        if result.exception:
-            print_exception(result.exception)
-            breakpoint()
-            pass
         assert result.exit_code == expected_exit, result.output
         return result.output
 

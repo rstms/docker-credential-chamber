@@ -13,6 +13,8 @@ import click
 
 from .exception_handler import ExceptionHandler
 
+DISABLE_LOGGING = True
+
 
 def encode_server(server):
     return b64encode(server.encode()).decode()
@@ -29,14 +31,22 @@ class Secrets:
         vault_token=None,
         vault_addr=None,
         chamber=None,
-        debug=False,
+        logger=None,
     ):
         self.service = service
         self.vault_token = vault_token
         self.vault_addr = vault_addr
         self.chamber = chamber or "chamber"
         self.secrets = None
-        self.debug = debug
+        self.logger = logger
+
+    def info(self, *args, **kwargs):
+        if self.logger:
+            self.logger.info(*args, **kwargs)
+
+    def debug(self, *args, **kwargs):
+        if self.logger:
+            self.logger.debug(*args, **kwargs)
 
     def _env(self):
         ret = os.environ.copy()
@@ -55,9 +65,7 @@ class Secrets:
         if self.secrets is None:
             self.read()
         server = encode_server(server)
-        s = self.secrets.setdefault(server, {})
-        s["Username"] = username
-        s["Secret"] = secret
+        self.secrets[server] = {"Username": username, "Secret": secret}
         self.write()
 
     def list(self):
@@ -77,32 +85,39 @@ class Secrets:
         if self.secrets is None:
             self.read()
         if fp:
-            json.dump(self.secrets, fp, indent=2)
-            fp.write("\n")
+            write_data = json.dumps(self.secrets, indent=2)
+            self.debug(f"write: {write_data}")
+            write_data = write_data + "\n"
+            fp.write(write_data.encode())
         else:
             for key in self._read().keys():
-                check_call(
-                    [self.chamber, "delete", self.service, key], env=self._env()
-                )
+                cmd = [self.chamber, "delete", self.service, key]
+                self.debug(f"{cmd}")
+                check_call(cmd, env=self._env())
             with SpooledTemporaryFile() as fp:
                 fp.write(json.dumps(self.secrets).encode())
                 fp.seek(0)
                 docker_data = fp.read()
-                if self.debug:
-                    logging.debug(f"write: {docker_data.decode()}")
-                with SpooledTemporaryFile() as bfp:
-                    bfp.write(docker_data)
-                    bfp.seek(0)
-                    check_call(
-                        [self.chamber, "import", self.service, "-"],
-                        stdin=bfp,
-                        env=self._env(),
-                    )
+                self.debug(f"write: {docker_data.decode()}")
+
+                creds = json.loads(docker_data)
+                for k, v in creds.items():
+                    cmd = [
+                        self.chamber,
+                        "write",
+                        self.service,
+                        k,
+                        json.dumps(v),
+                    ]
+                    self.debug(f"{cmd}")
+                    check_call(cmd, env=self._env())
 
     def read(self, fp=None):
         self.secrets = {}
         if fp:
-            self.secrets = json.load(fp)
+            local_data = fp.read()
+            self.debug(f"read: {local_data}")
+            self.secrets = json.loads(local_data)
         else:
             self.secrets = self._read()
 
@@ -113,11 +128,18 @@ class Secrets:
         ).decode()
         services = services.split("\n")
         if self.service in services:
-            data = check_output(
-                [self.chamber, "export", self.service], env=self._env()
-            ).decode()
+            cmd = [self.chamber, "export", self.service]
+            self.debug(f"{cmd}")
+            data = check_output(cmd, env=self._env()).decode()
+            self.debug(f"_read: {data}")
             if len(data):
-                ret = json.loads(data)
+                creds = json.loads(data)
+                ret = {}
+                for k, v in creds.items():
+                    if isinstance(v, str):
+                        v = json.loads(v)
+                    ret[k] = v
+        self.debug(f"_read()-> {ret}")
         return ret
 
 
@@ -155,7 +177,6 @@ class Secrets:
     envvar="DOCKER_CREDENTIALS_LOGFILE",
     help="log to file",
 )
-@click.option("-e", "--log-stderr", is_flag=True, help="log to stderr")
 @click.option(
     "-L",
     "--log-level",
@@ -167,7 +188,7 @@ class Secrets:
     "-c", "--chamber", envvar="CHAMBER", show_envvar=True, default="chamber"
 )
 @click.pass_context
-def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
+def cli(ctx, service, token, debug, log_file, log_level, chamber):
     """
     docker credential helper
 
@@ -182,24 +203,30 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
 
     # reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
 
-    log_format = "%(levelname)s %(msg)s"
-    if log_file:
-        logging.basicConfig(
-            level=log_level, filename=log_file, format=log_format
-        )
-        logger = logging.getLogger()
-    elif log_stderr:
-        logging.basicConfig(
-            level=log_level, stream=sys.stderr, format=log_format
-        )
-        logger = logging.getLogger()
+    if DISABLE_LOGGING:
+        logger = None
+    elif log_file:
+        log_format = "%(levelname)s %(msg)s"
+        if log_file == "stderr":
+            logging.basicConfig(
+                level=log_level, stream=sys.stderr, format=log_format
+            )
+        else:
+            logging.basicConfig(
+                level=log_level, filename=log_file, format=log_format
+            )
+        logger = logging.getLogger(__name__)
+        logger.setLevel(log_level)
     else:
         logger = None
 
     handler = ExceptionHandler(debug, logger)  # noqa: F841
 
-    logging.info("startup")
-    ctx.obj = Secrets(service, vault_token=token, chamber=chamber, debug=debug)
+    ctx.obj = Secrets(
+        service, vault_token=token, chamber=chamber, logger=logger
+    )
+
+    ctx.obj.info("startup")
 
 
 # @cli.command()
@@ -234,7 +261,7 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
 @click.pass_context
 def store(ctx, input):
     """protocol command"""
-    logging.debug(f"store  {input=}")
+    ctx.obj.debug(f"store  {input=}")
     data = input.read()
     config = json.loads(data)
     ctx.obj.put(config["ServerURL"], config["Username"], config["Secret"])
@@ -246,7 +273,7 @@ def store(ctx, input):
 @click.pass_context
 def get(ctx, input, output):
     """protocol command"""
-    logging.debug(f"get {input=} {output=}")
+    ctx.obj.debug(f"get {input=} {output=}")
     server_url = input.read().strip()
     json.dump(ctx.obj.get(server_url), output)
 
@@ -256,7 +283,7 @@ def get(ctx, input, output):
 @click.pass_context
 def erase(ctx, input):
     """protocol command"""
-    logging.debug(f"erase {input=}")
+    ctx.obj.debug(f"erase {input=}")
     server_url = input.read().strip()
     ctx.obj.delete(server_url)
 
@@ -266,7 +293,7 @@ def erase(ctx, input):
 @click.pass_context
 def list(ctx, output):
     """protocol command (undocumented)"""
-    logging.debug(f"list {output=}")
+    ctx.obj.debug(f"list {output=}")
     json.dump(ctx.obj.list(), output)
 
 
@@ -274,7 +301,7 @@ def list(ctx, output):
 @click.pass_context
 def install(ctx):
     """configure this credental helper in ~/.docker/config.json"""
-    logging.debug("install")
+    ctx.obj.debug("install")
     config_dir = Path.home() / ".docker"
     config_dir.mkdir(exist_ok=True)
     config_file = config_dir / "config.json"
