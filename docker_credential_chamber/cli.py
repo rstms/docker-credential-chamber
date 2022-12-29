@@ -24,13 +24,19 @@ def decode_key(key):
 
 class Secrets:
     def __init__(
-        self, service, vault_token=None, vault_addr=None, chamber=None
+        self,
+        service,
+        vault_token=None,
+        vault_addr=None,
+        chamber=None,
+        debug=False,
     ):
         self.service = service
         self.vault_token = vault_token
         self.vault_addr = vault_addr
         self.chamber = chamber or "chamber"
         self.secrets = None
+        self.debug = debug
 
     def _env(self):
         ret = os.environ.copy()
@@ -81,11 +87,17 @@ class Secrets:
             with SpooledTemporaryFile() as fp:
                 fp.write(json.dumps(self.secrets).encode())
                 fp.seek(0)
-                check_call(
-                    [self.chamber, "import", self.service, "-"],
-                    stdin=fp,
-                    env=self._env(),
-                )
+                docker_data = fp.read()
+                if self.debug:
+                    logging.debug(f"write: {docker_data.decode()}")
+                with SpooledTemporaryFile() as bfp:
+                    bfp.write(docker_data)
+                    bfp.seek(0)
+                    check_call(
+                        [self.chamber, "import", self.service, "-"],
+                        stdin=bfp,
+                        env=self._env(),
+                    )
 
     def read(self, fp=None):
         self.secrets = {}
@@ -128,7 +140,12 @@ class Secrets:
     help="vault token to use with chamber command",
 )
 @click.option(
-    "-d", "--debug", is_flag=True, help="show full stack trace on exceptions"
+    "-d",
+    "--debug",
+    is_flag=True,
+    envvar="DOCKER_CREDENTIALS_DEBUG",
+    show_envvar=True,
+    help="show full stack trace on exceptions",
 )
 @click.option(
     "-f",
@@ -182,7 +199,7 @@ def cli(ctx, service, token, debug, log_file, log_stderr, log_level, chamber):
     handler = ExceptionHandler(debug, logger)  # noqa: F841
 
     logging.info("startup")
-    ctx.obj = Secrets(service, vault_token=token, chamber=chamber)
+    ctx.obj = Secrets(service, vault_token=token, chamber=chamber, debug=debug)
 
 
 # @cli.command()
@@ -258,7 +275,9 @@ def list(ctx, output):
 def install(ctx):
     """configure this credental helper in ~/.docker/config.json"""
     logging.debug("install")
-    config_file = Path.home() / ".docker" / "config.json"
+    config_dir = Path.home() / ".docker"
+    config_dir.mkdir(exist_ok=True)
+    config_file = config_dir / "config.json"
     if config_file.is_file():
         config = json.loads(config_file.read_text())
     else:
