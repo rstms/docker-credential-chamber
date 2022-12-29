@@ -39,24 +39,25 @@ def global_environment():
         os.environ.pop(TEST_SERVICE_ENV, True)
 
         def get_services():
-            output = subprocess.check_output([chamber, "list-services"]).decode()
+            output = subprocess.check_output(
+                [chamber, "list-services"]
+            ).decode()
             services = output.strip().split("\n")
             return services
-    
+
         for chamber in LOCAL_CHAMBER, CLOUD_CHAMBER:
             services = get_services()
-            breakpoint()
             if TEST_SERVICE in services:
                 data = subprocess.check_output(
                     [chamber, "export", TEST_SERVICE]
                 ).decode()
                 if data:
                     for key in json.loads(data).keys():
-                        subprocess.check_call([chamber, "delete", TEST_SERVICE, key])
+                        subprocess.check_call(
+                            [chamber, "delete", TEST_SERVICE, key]
+                        )
             services = get_services()
-            breakpoint()
             assert TEST_SERVICE not in services
-
 
 
 @pytest.fixture()
