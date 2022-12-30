@@ -48,6 +48,17 @@ docs = [
 [tool.black]
 line-length = 80
 
+[tool.pytest.ini_options]
+addopts = '-x'
+log_auto_indent = true
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(levelname)s %(message)s"
+
+log_file = "pytest.log"
+log_file_format = "%(levelname)s %(name)s.%(funcName)s %(message)s"
+log_file_level = "DEBUG"
+
 [project.urls]
 Home = "https://github.com/rstms/docker-credential-chamber"
 

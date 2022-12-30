@@ -1,11 +1,10 @@
 # test - testing with pytest and tox
 
-options ?= -x --log-cli-level=CRITICAL
+options ?= -x --log-cli-level=WARNING
 testfiles ?= $(wildcard tests/test_*.py)
 options := $(if $(test),$(options) -k $(test),$(options))
 
 tox_options ?=
-
 
 
 ### run tests;  example: make options=-svvx test=cli test 
@@ -14,7 +13,7 @@ test:
 
 ### run tests; drop into pdb on exceptions or breakpoints
 debug:
-	@$(MAKE) --no-print-directory options="$(options) --log-cli-level=INFO -xvvvs --pdb" test
+	@$(MAKE) --no-print-directory options="$(options) --log-cli-level=DEBUG -xvvvs --pdb" test
 
 ### check code coverage quickly with the default Python
 coverage:

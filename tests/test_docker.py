@@ -4,38 +4,42 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 
 import pytest
 
-info = logging.info
-error = logging.error
+logger = logging.getLogger(__name__)
+
+info = logger.info
+error = logger.error
 
 
 @pytest.fixture
 def run():
     def _run(cmd, **kwargs):
-        kwargs["shell"] = True
+        if isinstance(cmd, str):
+            kwargs["shell"] = True
         kwargs["capture_output"] = True
         kwargs["text"] = True
         info(cmd)
         ret = subprocess.run(cmd, **kwargs)
-        if ret.stderr:
-            error(ret.stderr)
+        info(f"[stdout] {ret.stdout}")
+        info(f"[stderr] {ret.stderr}")
         assert ret.returncode == 0, ret
-        stdout = ret.stdout.strip()
-        logging.info(stdout)
-        return stdout
+        return ret.stdout.strip()
 
     return _run
 
 
-@pytest.mark.parametrize("dialect", ["local", "cloud"])
+@pytest.mark.parametrize("dialect", ["cloud", "local"])
 def test_docker_login(
-    run, docker_dotpath, service, local_chamber, cloud_chamber, dialect
+    run, service, local_chamber, cloud_chamber, dialect, monkeypatch
 ):
+    dotpath = Path.home() / ".docker"
+    shutil.rmtree(dotpath)
 
     if dialect == "local":
         chamber = local_chamber
@@ -54,19 +58,17 @@ def test_docker_login(
 
     env = os.environ.copy()
     env["CHAMBER"] = str(chamber)
-    env["DOCKER_CREDENTIALS_DEBUG"] = "1"
-    env["DOCKER_CREDENTIALS_LOGLEVEL"] = "DEBUG"
-    env["DOCKER_CREDENTIALS_LOGFILE"] = "dcc.log"
 
     assert "REGISTRY_NAME" in os.environ
     assert "REGISTRY_TOKEN" in os.environ
 
     run("docker-credential-chamber install", env=env)
-    assert docker_dotpath.is_dir()
-    docker_config = docker_dotpath / "config.json"
+    assert dotpath.is_dir()
+    docker_config = dotpath / "config.json"
     assert docker_config.is_file()
     config = json.loads(docker_config.read_text())
-    assert config == {"credsStore": "chamber"}
+    assert "credsStore" in config
+    assert config["credsStore"] == "chamber"
 
     ret = run("docker logout", env=env)
     info(ret)
@@ -75,7 +77,13 @@ def test_docker_login(
         fp.write(os.environ["REGISTRY_TOKEN"].encode())
         fp.seek(0)
         result = run(
-            "docker login --username $REGISTRY_NAME --password-stdin",
+            [
+                "docker",
+                "login",
+                "--username",
+                os.environ["REGISTRY_NAME"],
+                "--password-stdin",
+            ],
             stdin=fp,
             env=env,
         )

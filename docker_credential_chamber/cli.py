@@ -4,27 +4,34 @@ import json
 import logging
 import os
 import sys
-from base64 import b64decode, b64encode
+import time
+from base64 import b32decode, b32encode
 from pathlib import Path
-from subprocess import check_call, check_output
-from tempfile import SpooledTemporaryFile
+from subprocess import CalledProcessError, check_call, check_output
 
 import click
 
 from .exception_handler import ExceptionHandler
 
-DISABLE_LOGGING = False
+ENABLE_LOGGING = False
+
+READBACK_TIMEOUT = 5
 
 
 def encode_server(server):
-    return b64encode(server.encode()).decode()
+    key = b32encode(server.encode()).decode()
+    key = key.replace("=", "_")
+    key = key.lower()
+    return key
 
 
 def decode_key(key):
-    return b64decode(key.encode()).decode()
+    key = key.replace("_", "=")
+    server_url = b32decode(key.encode().upper()).decode()
+    return server_url
 
 
-class Secrets:
+class DCC:
     def __init__(
         self,
         service,
@@ -37,16 +44,48 @@ class Secrets:
         self.vault_token = vault_token
         self.vault_addr = vault_addr
         self.chamber = chamber or "chamber"
-        self.secrets = None
-        self.logger = logger
+        if ENABLE_LOGGING:
+            self.logger = logger
+            self.debug(self._chamber_version())
+        else:
+            self.logger = None
 
-    def info(self, *args, **kwargs):
-        if self.logger:
-            self.logger.info(*args, **kwargs)
+    def __str__(self):
+        return repr(self)
 
-    def debug(self, *args, **kwargs):
+    def __repr__(self):
+        return f"{self.__class__.__name__}:{Path(self.chamber).stem}"
+
+    def _chamber_version(self):
+        try:
+            version = check_output([self.chamber, "version"])
+        except CalledProcessError:
+            version = check_output([self.chamber, "--version"])
+        return f"{self.chamber} {version}"
+
+    def install(self):
+        config_dir = Path.home() / ".docker"
+        config_dir.mkdir(exist_ok=True)
+        config_file = config_dir / "config.json"
+        if config_file.is_file():
+            config = json.loads(config_file.read_text())
+        else:
+            config = {}
+        config["credsStore"] = "chamber"
+        config_file.write_text(json.dumps(config))
+
+    def info(self, msg, **kwargs):
         if self.logger:
-            self.logger.debug(*args, **kwargs)
+            self.logger.info(f"{self}: {msg}", **kwargs)
+
+    def debug(self, msg, **kwargs):
+        if self.logger:
+            self.logger.debug(f"{self}: {msg}", **kwargs)
+
+    def error(self, msg, **kwargs):
+        if self.logger:
+            self.logger.error(f"{self}: {msg}", **kwargs)
+        sys.stderr.write(f"docker-credential-chamber: {msg}\n")
 
     def _env(self):
         ret = os.environ.copy()
@@ -57,93 +96,109 @@ class Secrets:
         return ret
 
     def get(self, server):
-        if self.secrets is None:
-            self.read()
-        return self.secrets.get(encode_server(server), None)
+        self.debug(f"get({server=})")
+        secrets = self.read()
+        ret = secrets.get(server, {})
+        if not ret:
+            self.server_not_found(server)
+        self.debug(f"get() -> {ret}")
+        return ret
 
     def put(self, server, username, secret):
-        if self.secrets is None:
-            self.read()
-        server = encode_server(server)
-        self.secrets[server] = {"Username": username, "Secret": secret}
-        self.write()
+        self.debug(f"put({server=} {username=} {secret=})")
+        current = self.read()
+        update = current.copy()
+        update[server] = {"Username": username, "Secret": secret}
+        self.write(update, current)
 
     def list(self):
-        if self.secrets is None:
-            self.read()
-        return {decode_key(k): v["Username"] for k, v in self.secrets.items()}
+        self.debug("list()")
+        secrets = self.read()
+        ret = {k: v["Username"] for k, v in secrets.items()}
+        self.debug(f"list() -> {ret}")
+        return ret
 
     def delete(self, server):
-        if self.secrets is None:
-            self.read()
-        server = encode_server(server)
-        if server in self.secrets:
-            del self.secrets[server]
-        self.write()
-
-    def write(self, fp=None):
-        if self.secrets is None:
-            self.read()
-        if fp:
-            write_data = json.dumps(self.secrets, indent=2)
-            self.debug(f"write: {write_data}")
-            write_data = write_data + "\n"
-            fp.write(write_data.encode())
+        self.debug(f"delete({server=})")
+        current = self.read()
+        if server in current.keys():
+            update = current.copy()
+            update.pop(server)
+            self.write(update, current)
         else:
-            for key in self._read().keys():
-                cmd = [self.chamber, "delete", self.service, key]
+            self.server_not_found(server)
+
+    def server_not_found(self, server):
+        self.error(
+            f"Service '{self.service}' contains no stored credentials for '{server}'"
+        )
+
+    def write(self, secrets, current):
+        if current is None:
+            current = self.read()
+
+        for server in current.keys():
+            if server not in secrets.keys():
+                cmd = [
+                    self.chamber,
+                    "delete",
+                    self.service,
+                    encode_server(server),
+                ]
                 self.debug(f"{cmd}")
                 check_call(cmd, env=self._env())
-            with SpooledTemporaryFile() as fp:
-                fp.write(json.dumps(self.secrets).encode())
-                fp.seek(0)
-                docker_data = fp.read()
-                self.debug(f"write: {docker_data.decode()}")
+        for server, creds in secrets.items():
+            cmd = [
+                self.chamber,
+                "write",
+                self.service,
+                encode_server(server),
+                json.dumps(creds),
+            ]
+            self.debug(f"write: {cmd}")
+            check_call(cmd, env=self._env())
+        self.verify(secrets)
 
-                creds = json.loads(docker_data)
-                for k, v in creds.items():
-                    cmd = [
-                        self.chamber,
-                        "write",
-                        self.service,
-                        k,
-                        json.dumps(v),
-                    ]
-                    self.debug(f"{cmd}")
-                    check_call(cmd, env=self._env())
+    def verify(self, secrets):
+        self.debug(f"verify({secrets=})")
+        timeout = time.time() + READBACK_TIMEOUT
+        while time.time() < timeout:
+            if self.read() == secrets:
+                self.debug("verify() -> True")
+                return True
+            else:
+                time.sleep(1)
+        self.error(
+            f"Readback failure writing credentials service '{self.service}'"
+        )
+        sys.exit(-1)
 
-    def read(self, fp=None):
-        self.secrets = {}
-        if fp:
-            local_data = fp.read()
-            self.debug(f"read: {local_data}")
-            self.secrets = json.loads(local_data)
-        else:
-            self.secrets = self._read()
-
-    def _read(self):
+    def read(self):
         ret = {}
         services = check_output(
             [self.chamber, "list-services"], env=self._env()
         ).decode()
         services = services.split("\n")
+        # self.debug(f"_read() {services=}")
+        self.debug(
+            f"_read() {self.service} in services: {self.service in services}"
+        )
         if self.service in services:
             cmd = [self.chamber, "export", self.service]
             self.debug(f"{cmd}")
             data = check_output(cmd, env=self._env()).decode()
-            self.debug(f"_read: {data}")
+            self.debug(f"_read: {data=}")
             if len(data):
-                creds = json.loads(data)
-                ret = {}
-                for k, v in creds.items():
-                    if isinstance(v, str):
-                        v = json.loads(v)
-                    ret[k] = v
-        self.debug(f"_read()-> {ret}")
+                for key, creds in json.loads(data).items():
+                    if isinstance(creds, str):
+                        creds = json.loads(creds)
+                    ret[decode_key(key)] = creds
+        self.debug(f"_read() -> {ret}")
         return ret
 
 
 @click.group(name="docker-credential-chamber")
+@click.version_option()
 @click.option(
     "-s",
     "--service",
@@ -188,7 +243,7 @@ class Secrets:
     "-c", "--chamber", envvar="CHAMBER", show_envvar=True, default="chamber"
 )
 @click.pass_context
-def cli(ctx, service, token, debug, log_file, log_level, chamber):
+def cli(ctx, debug, service, token, chamber, log_file, log_level):
     """
     docker credential helper
 
@@ -203,9 +258,15 @@ def cli(ctx, service, token, debug, log_file, log_level, chamber):
 
     # reference: https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
 
-    if DISABLE_LOGGING:
-        logger = None
-    elif log_file:
+    if debug:
+        click.echo(f"{debug=}", err=True)
+        click.echo(f"{service=}", err=True)
+        click.echo(f"{token=}", err=True)
+        click.echo(f"{chamber=}", err=True)
+        click.echo(f"{log_file=}", err=True)
+        click.echo(f"{log_level=}", err=True)
+
+    if log_file:
         log_format = "%(levelname)s %(msg)s"
         if log_file == "stderr":
             logging.basicConfig(
@@ -215,45 +276,12 @@ def cli(ctx, service, token, debug, log_file, log_level, chamber):
             logging.basicConfig(
                 level=log_level, filename=log_file, format=log_format
             )
-        logger = logging.getLogger(__name__)
-        logger.setLevel(log_level)
-    else:
-        logger = None
+    logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
 
     handler = ExceptionHandler(debug, logger)  # noqa: F841
-
-    ctx.obj = Secrets(
-        service, vault_token=token, chamber=chamber, logger=logger
-    )
-
+    ctx.obj = DCC(service, vault_token=token, chamber=chamber, logger=logger)
     ctx.obj.info("startup")
-
-
-# @cli.command()
-# @click.argument("output", type=click.File("w"), default="-")
-# @click.pass_context
-# def dump(ctx, output):
-#    logging.debug(f"dump {output=}")
-#    ctx.obj.write(output)
-
-
-# @cli.command()
-# @click.argument("input", type=click.File("r"), default="-")
-# @click.pass_context
-# def load(ctx, input):
-#    logging.debug(f"load {input=}")
-#    ctx.obj.read(input)
-#    ctx.obj.write()
-
-
-# @cli.command()
-# @click.argument("server-url")
-# @click.argument("username")
-# @click.argument("secret")
-# @click.pass_context
-# def init(ctx, server_url, username, secret):
-#    logging.debug(f"init {server_url=} {username=} {secret=}")
-#    ctx.obj.put(server_url, username, secret)
 
 
 @cli.command()
@@ -302,15 +330,7 @@ def list(ctx, output):
 def install(ctx):
     """configure this credental helper in ~/.docker/config.json"""
     ctx.obj.debug("install")
-    config_dir = Path.home() / ".docker"
-    config_dir.mkdir(exist_ok=True)
-    config_file = config_dir / "config.json"
-    if config_file.is_file():
-        config = json.loads(config_file.read_text())
-    else:
-        config = {}
-    config["credsStore"] = "chamber"
-    config_file.write_text(json.dumps(config))
+    ctx.obj.install()
 
 
 if __name__ == "__main__":

@@ -13,16 +13,29 @@ from docker_credential_chamber import cli
 
 @pytest.fixture
 def run():
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
 
     def _run(cmd, **kwargs):
-        expected_exit = kwargs.pop("expected_input", 0)
+        expected_exit = kwargs.pop("expected_exit", 0)
         kwargs["catch_exceptions"] = False
         result = runner.invoke(cli, cmd, **kwargs)
         assert result.exit_code == expected_exit, result.output
-        return result.output
+        return result.stdout, result.stderr
 
     return _run
+
+
+@pytest.fixture
+def store(run, shared_datadir):
+    def _store(filename):
+        testfile = shared_datadir / filename
+        assert testfile.is_file()
+        test_str = testfile.read_text()
+        test_data = json.loads(test_str)
+        assert isinstance(test_data, dict)
+        return run(["store"], input=testfile.open("r"))
+
+    return _store
 
 
 def test_cli_version():
@@ -40,7 +53,7 @@ def test_cli_version():
 
 def test_cli_help(run):
     """Test CLI help."""
-    output = run(["--help"])
+    output, error = run(["--help"])
     assert re.search(
         r"^[\s]*--help[\s]*Show this message and exit.[\s]*$",
         output,
@@ -49,37 +62,38 @@ def test_cli_help(run):
 
 
 def test_cli_install(run):
-    output = run(["install"])
+    output, error = run(["install"])
     assert isinstance(output, str)
     assert output == ""
 
 
-def test_cli_erase(run):
-    output = run(["erase"])
+def test_cli_store(store):
+    output, error = store("creds.json")
     assert isinstance(output, str)
     assert output == ""
 
 
-def test_cli_get(run):
-    output = run(["get"])
+def test_cli_erase(store, run, shared_datadir):
+    store("creds.json")
+    server_file = shared_datadir / "server_url"
+    output, error = run(["erase"], input=server_file.open("r"))
     assert isinstance(output, str)
-    data = json.loads(output)
-    assert data is None
+    assert output == ""
 
 
-def test_cli_list(run):
-    output = run(["list"])
+def test_cli_get(store, run, shared_datadir):
+    store("creds.json")
+    server_file = shared_datadir / "server_url"
+    output, error = run(["get"], input=server_file.open("r"))
     assert isinstance(output, str)
     data = json.loads(output)
     assert isinstance(data, dict)
+    assert set(list(data.keys())) == set(['Username', 'Secret']) 
 
 
-def test_cli_store(run, shared_datadir):
-    testfile = shared_datadir / "creds.json"
-    assert testfile.is_file()
-    test_str = testfile.read_text()
-    test_data = json.loads(test_str)
-    assert isinstance(test_data, dict)
-    output = run(["store"], input=testfile.open("r"))
+def test_cli_list(store, run):
+    store("creds.json")
+    output, error = run(["list"])
     assert isinstance(output, str)
-    assert output == ""
+    data = json.loads(output)
+    assert isinstance(data, dict)
