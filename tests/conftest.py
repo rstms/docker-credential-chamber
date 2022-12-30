@@ -14,6 +14,8 @@ CLOUD_CHAMBER = "cloud-chamber"
 TEST_SERVICE_ENV = "DOCKER_CREDENTIALS_SERVICE"
 TEST_SERVICE = "credentials_helper_system_test"
 
+CLEANUP_TIMEOUT = 3
+
 
 @pytest.fixture
 def local_chamber():
@@ -56,8 +58,10 @@ def global_environment():
                         subprocess.check_call(
                             [chamber, "delete", TEST_SERVICE, key]
                         )
-            services = get_services()
-            assert TEST_SERVICE not in services
+                timeout = time.time() + CLEANUP_TIMEOUT
+                while TEST_SERVICE in services:
+                    services = get_services()
+                    assert time.time() < timeout
 
 
 @pytest.fixture()
