@@ -13,8 +13,7 @@ import click
 
 from .exception_handler import ExceptionHandler
 
-DISABLE_LOGGING = True
-
+DISABLE_LOGGING = False
 
 def encode_server(server):
     return b64encode(server.encode()).decode()
