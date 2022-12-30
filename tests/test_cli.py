@@ -88,7 +88,7 @@ def test_cli_get(store, run, shared_datadir):
     assert isinstance(output, str)
     data = json.loads(output)
     assert isinstance(data, dict)
-    assert set(list(data.keys())) == set(['Username', 'Secret']) 
+    assert set(list(data.keys())) == set(["Username", "Secret"])
 
 
 def test_cli_list(store, run):
