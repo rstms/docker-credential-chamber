@@ -1,7 +1,9 @@
 # publish - build package and publish
+ 
 
 # publish to pypi
 publish: release
+	$(call check_private)
 	$(call require_pypi_config)
 	@set -e;\
 	if [ "$(version)" != "$(pypi_version)" ]; then \
@@ -22,6 +24,9 @@ publish-clean:
 	rm -f .dist
 	rm -rf .tox
 
+publish-sterile:
+	@:
+
 # functions
 define require_pypi_config =
 $(if $(wildcard ~/.pypirc),,$(error publish failed; ~/.pypirc required))
@@ -35,3 +40,7 @@ $(if $(1),$(1),$(error $(2)))
 endef
 
 check_pypi_version = $(call check_null,$(pypi_version),PyPi version query failed)
+
+define check_private = 
+$(if $(shell tq < pyproject.toml '.project.classifiers' | grep Private),$(error 'Private' classifier set in pyproject.toml),)
+endef

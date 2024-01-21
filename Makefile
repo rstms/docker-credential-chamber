@@ -19,4 +19,4 @@ uninstall:
 clean: 
 	for clean in $(call included,clean); do ${MAKE} $$clean; done
 
-include $(wildcard make.include/*.mk)
+include $(wildcard make/*.mk)

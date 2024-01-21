@@ -1,5 +1,5 @@
 # browser: run the system's browser if available
-
+#
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 
@@ -10,4 +10,11 @@ endef
 
 export BROWSER_PYSCRIPT
 
+.PHONY: browser
 browser := python -c "$$BROWSER_PYSCRIPT"
+
+browser-clean:
+	@:
+
+browser-sterile:
+	@:
