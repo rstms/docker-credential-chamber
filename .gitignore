@@ -134,3 +134,4 @@ dmypy.json
 lint
 postactivate
 .pyproject.toml.*
+.release
