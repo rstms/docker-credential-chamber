@@ -16,7 +16,6 @@ uninstall:
 	pip uninstall -yqq $(module)
 
 ### remove all build, test, coverage and Python artifacts
-clean: 
-	for clean in $(call included,clean); do ${MAKE} $$clean; done
+clean: make-clean
 
 include $(wildcard make/*.mk)
